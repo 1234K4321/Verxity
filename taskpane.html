@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+  <title>AI Report Generator</title>
+  <script src="https://appsforoffice.microsoft.com/lib/1/hosted/office.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 10px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background-color: #f4f4f4;
+    }
+    .chat-container {
+      flex-grow: 1;
+      overflow-y: auto;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #fff;
+      border-radius: 8px;
+    }
+    .message {
+      margin-bottom: 10px;
+    }
+    .user-message {
+      text-align: right;
+      color: #0078d4;
+    }
+    .ai-message {
+      text-align: left;
+      color: #333;
+    }
+    .input-container {
+      display: flex;
+    }
+    #prompt-input {
+      flex-grow: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #generate-btn {
+      margin-left: 5px;
+      padding: 8px 12px;
+      background-color: #0078d4;
+      color: #fff;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    #loading-indicator {
+      display: none;
+      margin-top: 10px;
+      text-align: center;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container" id="chat-container">
+    <div class="message ai-message">
+      Hello! I'm your AI financial analyst. How can I help you?
+    </div>
+  </div>
+  <div class="input-container">
+    <input type="text" id="prompt-input" placeholder="e.g., 'Generate a quarterly revenue report for Tesla'" />
+    <button id="generate-btn">Generate</button>
+  </div>
+  <div id="loading-indicator">Generating...</div>
+
+  <script>
+    const chatContainer = document.getElementById('chat-container');
+    const promptInput = document.getElementById('prompt-input');
+    const generateBtn = document.getElementById('generate-btn');
+    const loadingIndicator = document.getElementById('loading-indicator');
+
+    // Add a chat message to the UI
+    function addMessage(text, sender) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${sender}-message`;
+      messageDiv.innerText = text;
+      chatContainer.appendChild(messageDiv);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // Main function to handle the button click
+    generateBtn.onclick = async () => {
+      const userPrompt = promptInput.value.trim();
+      if (!userPrompt) return;
+
+      addMessage(userPrompt, 'user');
+      promptInput.value = '';
+      loadingIndicator.style.display = 'block';
+
+      try {
+        const response = await fetch('http://localhost:5000/api/generate-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ prompt: userPrompt }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.success) {
+          addMessage('Report generated. Writing to Excel...', 'ai');
+          await writeToExcel(data);
+          addMessage('Done! The report has been written and formatted in your spreadsheet.', 'ai');
+        } else {
+          addMessage(`Error: ${data.error}`, 'ai');
+        }
+      } catch (e) {
+        addMessage(`An error occurred: ${e.message}`, 'ai');
+      } finally {
+        loadingIndicator.style.display = 'none';
+      }
+    };
+
+    // Excel API interaction
+    async function writeToExcel(apiResponse) {
+      await Excel.run(async (context) => {
+        const sheet = context.workbook.worksheets.getActiveWorksheet();
+        const tableData = apiResponse.tableData;
+        const formatting = apiResponse.formatting;
+
+        // Write the data to the worksheet
+        const tableRange = sheet.getRangeByIndexes(0, 0, tableData.length, tableData[0].length);
+        tableRange.values = tableData;
+
+        // Apply formatting based on the instructions from the backend
+        if (formatting) {
+          const headerRange = sheet.getRange(formatting.header.range);
+          headerRange.format.fill.color = formatting.header.backgroundColor;
+          headerRange.format.font.color = formatting.header.fontColor;
+          headerRange.format.font.bold = formatting.header.bold;
+          headerRange.format.verticalAlignment = formatting.header.verticalAlignment;
+          headerRange.format.horizontalAlignment = formatting.header.horizontalAlignment;
+          
+          const numberRange = sheet.getRange(formatting.numberFormat.range);
+          numberRange.numberFormat = [[formatting.numberFormat.format]];
+
+          const borderRange = sheet.getRange(formatting.border.range);
+          borderRange.format.borders.getRange().load("style");
+          await context.sync();
+          borderRange.format.borders.getRange().style = formatting.border.style;
+          borderRange.format.borders.getRange().color = formatting.border.color;
+          
+          // Autofit columns for better readability
+          sheet.getUsedRange().load("columnCount");
+          await context.sync();
+          sheet.getUsedRange().autofitColumns();
+        }
+        await context.sync();
+      });
+    }
+
+  </script>
+</body>
+</html>
