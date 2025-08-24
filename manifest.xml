@@ -1,20 +1,19 @@
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<OfficeApp
-  xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
+<OfficeApp xmlns="http://schemas.microsoft.com/office/appforoffice/1.1"
   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xmlns:bt="http://schemas.microsoft.com/office/officeappbasictypes/1.0"
-  xsi:type="TaskPaneApp">
-  <Id>21c2b8b7-6c8a-4e7e-a746-e8a57000fecd</Id>
+  xmlns:ov="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="TaskPaneApp">
+  <Id>0e5858bd-f0d8-422e-b256-04a47b3c43a7</Id>
   <Version>1.0.0.0</Version>
-  <ProviderName>Verxity Labs</ProviderName>
+  <ProviderName>Verxity</ProviderName>
   <DefaultLocale>en-US</DefaultLocale>
-  <DisplayName DefaultValue="AI Report Generator"/>
-  <Description DefaultValue="A simple AI-powered report generator for Excel."/>
-  <IconUrl DefaultValue="https://via.placeholder.com/32x32.png"/>
-  <HighResolutionIconUrl DefaultValue="https://via.placeholder.com/64x64.png"/>
-  <SupportUrl DefaultValue="https://www.verxitylabs.com/support"/>
+  <DisplayName DefaultValue="Excel AI Analyst"/>
+  <Description DefaultValue="AI chatbot Excel add-in to automate financial analysis."/>
+  <IconUrl DefaultValue="https://officedev.github.io/Office-Add-in-samples/Samples/hello-world/excel-hello-world/assets/icon-32.png"/>
+  <HighResolutionIconUrl DefaultValue="https://officedev.github.io/Office-Add-in-samples/Samples/hello-world/excel-hello-world/assets/icon-64.png"/>
+  <SupportUrl DefaultValue="https://learn.microsoft.com/office/dev/add-ins/overview/office-add-in-code-samples"/>
   <AppDomains>
-    <AppDomain>https://1234k4321.github.io/Verxity</AppDomain>
+    <AppDomain>https://1234k4321.github.io</AppDomain>
   </AppDomains>
   <Hosts>
     <Host Name="Workbook"/>
@@ -23,24 +22,30 @@
     <SourceLocation DefaultValue="https://1234k4321.github.io/Verxity/taskpane.html"/>
   </DefaultSettings>
   <Permissions>ReadWriteDocument</Permissions>
-  <Requirements>
-    <Sets DefaultMinVersion="1.1">
-      <Set Name="ExcelApi" MinVersion="1.1"/>
-    </Sets>
-  </Requirements>
   <VersionOverrides xmlns="http://schemas.microsoft.com/office/taskpaneappversionoverrides" xsi:type="VersionOverridesV1_0">
     <Hosts>
       <Host xsi:type="Workbook">
         <DesktopFormFactor>
+          <GetStarted>
+            <Title resid="GetStarted.Title"/>
+            <Description resid="GetStarted.Description"/>
+            <LearnMoreUrl resid="GetStarted.LearnMoreUrl"/>
+          </GetStarted>
+
           <ExtensionPoint xsi:type="PrimaryCommandSurface">
             <OfficeTab id="TabHome">
               <Group id="CommandsGroup">
                 <Label resid="CommandsGroup.Label"/>
+                <Icon>
+                  <bt:Image size="16" resid="Icon.16x16"/>
+                  <bt:Image size="32" resid="Icon.32x32"/>
+                  <bt:Image size="80" resid="Icon.80x80"/>
+                </Icon>
                 <Control xsi:type="Button" id="TaskpaneButton">
                   <Label resid="TaskpaneButton.Label"/>
                   <Supertip>
-                    <Title resid="TaskpaneButton.Title"/>
-                    <Description resid="TaskpaneButton.Description"/>
+                    <Title resid="TaskpaneButton.SupertipTitle"/>
+                    <Description resid="TaskpaneButton.SupertipText"/>
                   </Supertip>
                   <Icon>
                     <bt:Image size="16" resid="Icon.16x16"/>
@@ -60,21 +65,27 @@
     </Hosts>
     <Resources>
       <bt:Images>
-        <bt:Image id="Icon.16x16" DefaultValue="https://via.placeholder.com/16x16.png"/>
-        <bt:Image id="Icon.32x32" DefaultValue="https://via.placeholder.com/32x32.png"/>
-        <bt:Image id="Icon.80x80" DefaultValue="https://via.placeholder.com/80x80.png"/>
+        <bt:Image id="Icon.16x16" DefaultValue="https://officedev.github.io/Office-Add-in-samples/Samples/hello-world/excel-hello-world/assets/icon-16.png"/>
+        <bt:Image id="Icon.32x32" DefaultValue="https://officedev.github.io/Office-Add-in-samples/Samples/hello-world/excel-hello-world/assets/icon-32.png"/>
+        <bt:Image id="Icon.80x80" DefaultValue="https://officedev.github.io/Office-Add-in-samples/Samples/hello-world/excel-hello-world/assets/icon-80.png"/>
       </bt:Images>
       <bt:Urls>
+        <bt:Url id="GetStarted.LearnMoreUrl" DefaultValue="http://go.microsoft.com/fwlink/?LinkId=276812"/>
         <bt:Url id="Taskpane.Url" DefaultValue="https://1234k4321.github.io/Verxity/taskpane.html"/>
       </bt:Urls>
       <bt:ShortStrings>
-        <bt:String id="CommandsGroup.Label" DefaultValue="AI Report"/>
-        <bt:String id="TaskpaneButton.Label" DefaultValue="Generate Report"/>
-        <bt:String id="TaskpaneButton.Title" DefaultValue="Generate Report"/>
+        <bt:String id="GetStarted.Title" DefaultValue="Get started with the Excel AI add-in!"/>
+        <bt:String id="CommandsGroup.Label" DefaultValue="Verxity Add-in"/>
+        <bt:String id="TaskpaneButton.Label" DefaultValue="Excel AI Analyst"/>
+        <bt:String id="TaskpaneButton.SupertipTitle" DefaultValue="Excel AI Analyst"/>
       </bt:ShortStrings>
       <bt:LongStrings>
-        <bt:String id="TaskpaneButton.Description" DefaultValue="Opens the AI Report Generator sidebar."/>
+        <bt:String id="GetStarted.Description" DefaultValue="Your sample add-in loaded successfully. Go to the HOME tab and click the 'Excel AI Analyst' button to get started."/>
+        <bt:String id="TaskpaneButton.SupertipText" DefaultValue="Open the Excel AI Analyst add-in"/>
       </bt:LongStrings>
     </Resources>
   </VersionOverrides>
 </OfficeApp>
+<!--
+  template github source: https://github.com/OfficeDev/Office-Add-in-samples/blob/main/Samples/hello-world/excel-hello-world/manifest.xml
+-->
