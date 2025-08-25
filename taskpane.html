@@ -139,26 +139,53 @@
 
         // Apply formatting based on the instructions from the backend
         if (formatting) {
-          const headerRange = sheet.getRange(formatting.header.range);
-          headerRange.format.fill.color = formatting.header.backgroundColor;
-          headerRange.format.font.color = formatting.header.fontColor;
-          headerRange.format.font.bold = formatting.header.bold;
-          headerRange.format.verticalAlignment = formatting.header.verticalAlignment;
-          headerRange.format.horizontalAlignment = formatting.header.horizontalAlignment;
-          
-          const numberRange = sheet.getRange(formatting.numberFormat.range);
-          numberRange.numberFormat = [[formatting.numberFormat.format]];
+          for (const [name, rule] of Object.entries(formatting)) {
+            if (!rule || !rule.range) continue;
 
-          const borderRange = sheet.getRange(formatting.border.range);
-          borderRange.format.borders.getRange().load("style");
-          await context.sync();
-          borderRange.format.borders.getRange().style = formatting.border.style;
-          borderRange.format.borders.getRange().color = formatting.border.color;
-          
+            // Support comma-separated ranges: "A1:A1, B2:B3"
+            const a1Ranges = rule.range.split(',').map(r => r.trim()).filter(Boolean);
+
+            for (const a1 of a1Ranges) {
+              const rng = sheet.getRange(a1);
+
+              // Font/Fill/Alignment
+              if (typeof rule.bold === 'boolean') rng.format.font.bold = rule.bold;
+              if (rule.backgroundColor) rng.format.fill.color = rule.backgroundColor;
+              if (rule.fontColor) rng.format.font.color = rule.fontColor;
+              if (rule.horizontalAlignment) rng.format.horizontalAlignment = rule.horizontalAlignment;
+              if (rule.verticalAlignment) rng.format.verticalAlignment = rule.verticalAlignment;
+
+              // Number formats: handle any key that carries a "format" field
+              if (rule.format && (name.startsWith('numberFormat') || (!rule.style && !rule.color))) {
+                // Broadcast a single format to the whole range
+                rng.numberFormat = [[rule.format]];
+              }
+
+              // Borders (apply to all edges and inside borders if provided)
+              if (rule.style || rule.color) {
+                const borders = rng.format.borders;
+                const indices = [
+                  Excel.BorderIndex.edgeTop,
+                  Excel.BorderIndex.edgeBottom,
+                  Excel.BorderIndex.edgeLeft,
+                  Excel.BorderIndex.edgeRight,
+                  Excel.BorderIndex.insideHorizontal,
+                  Excel.BorderIndex.insideVertical,
+                ];
+                indices.forEach(idx => {
+                  const b = borders.getItem(idx);
+                  if (rule.style) b.style = rule.style;
+                  if (rule.color) b.color = rule.color;
+                });
+              }
+            }
+          }
+
           // Autofit columns for better readability
-          sheet.getUsedRange().load("columnCount");
+          const used = sheet.getUsedRange();
+          used.load("columnCount");
           await context.sync();
-          sheet.getUsedRange().autofitColumns();
+          used.autofitColumns();
         }
         await context.sync();
       });
