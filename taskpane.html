@@ -137,6 +137,31 @@
         const tableRange = sheet.getRangeByIndexes(0, 0, tableData.length, tableData[0].length);
         tableRange.values = tableData;
 
+        // Helpers
+        const horizMap = {
+          left: 'Left', center: 'Center', right: 'Right', justify: 'Justify',
+          fill: 'Fill', distributed: 'Distributed', centeracrossselection: 'CenterAcrossSelection'
+        };
+        const vertMap = { top: 'Top', center: 'Center', bottom: 'Bottom', justify: 'Justify', distributed: 'Distributed' };
+        const normalizeH = (v) => v ? (horizMap[v.toLowerCase()] || v) : null;
+        const normalizeV = (v) => v ? (vertMap[v.toLowerCase()] || v) : null;
+        const colToNum = (col) => {
+          let n = 0; for (const ch of col.toUpperCase()) { n = n * 26 + (ch.charCodeAt(0) - 64); } return n;
+        };
+        const parseA1Size = (addr) => {
+          const parts = addr.split(':').map(s => s.trim());
+          const parseRef = (r) => {
+            const m = r.match(/^([A-Za-z]+)(\d+)$/); if (!m) return null;
+            return { col: colToNum(m[1]), row: parseInt(m[2], 10) };
+          };
+          if (parts.length === 1) {
+            const p = parseRef(parts[0]); return p ? { rows: 1, cols: 1 } : null;
+          }
+          const p1 = parseRef(parts[0]); const p2 = parseRef(parts[1]);
+          if (!p1 || !p2) return null;
+          return { rows: Math.abs(p2.row - p1.row) + 1, cols: Math.abs(p2.col - p1.col) + 1 };
+        };
+
         // Apply formatting based on the instructions from the backend
         if (formatting) {
           for (const [name, rule] of Object.entries(formatting)) {
@@ -152,13 +177,16 @@
               if (typeof rule.bold === 'boolean') rng.format.font.bold = rule.bold;
               if (rule.backgroundColor) rng.format.fill.color = rule.backgroundColor;
               if (rule.fontColor) rng.format.font.color = rule.fontColor;
-              if (rule.horizontalAlignment) rng.format.horizontalAlignment = rule.horizontalAlignment;
-              if (rule.verticalAlignment) rng.format.verticalAlignment = rule.verticalAlignment;
+              const h = normalizeH(rule.horizontalAlignment);
+              if (h) rng.format.horizontalAlignment = h;
+              const v = normalizeV(rule.verticalAlignment);
+              if (v) rng.format.verticalAlignment = v;
 
-              // Number formats: handle any key that carries a "format" field
+              // Number formats: build a 2D array matching the range dimensions
               if (rule.format && (name.startsWith('numberFormat') || (!rule.style && !rule.color))) {
-                // Broadcast a single format to the whole range
-                rng.numberFormat = [[rule.format]];
+                const dim = parseA1Size(a1) || { rows: 1, cols: 1 };
+                const nf = Array.from({ length: dim.rows }, () => Array.from({ length: dim.cols }, () => rule.format));
+                rng.numberFormat = nf;
               }
 
               // Borders (apply to all edges and inside borders if provided)
@@ -183,7 +211,7 @@
 
           // Autofit columns for better readability
           const used = sheet.getUsedRange();
-          used.load("columnCount");
+          used.load('columnCount');
           await context.sync();
           used.autofitColumns();
         }
